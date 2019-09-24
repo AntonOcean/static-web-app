@@ -5,7 +5,7 @@ from http_engine import status
 from http_engine.methods import GET, HEAD
 from http_engine.response import parse_http_response
 
-DIST_DIR = 'httptest'
+ROOT_DIR = '/var/www/html'
 
 
 def static_handler(request):
@@ -15,11 +15,10 @@ def static_handler(request):
     base_path = request["path"].split('?')[0][1:]
     security = '..' not in base_path.split('/')
 
-    permission = base_path.startswith(DIST_DIR)
-    if not permission or not security:
+    if not security:
         return parse_http_response(request, status=status.BadRequest)
 
-    abs_path = unquote(os.path.join(os.getcwd(), "../", base_path))
+    abs_path = unquote(os.path.join(ROOT_DIR, base_path))
 
     if os.path.isdir(abs_path):
         abs_path = os.path.join(abs_path, "index.html")

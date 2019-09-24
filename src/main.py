@@ -6,8 +6,8 @@ from views import static_handler
 
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 
-HOST = 'localhost'
-PORT = 9090
+HOST = '0.0.0.0'
+PORT = 80
 
 
 def engine(recv_data: bytes) -> bytes:
@@ -31,3 +31,9 @@ def main():
 
 if __name__ == '__main__':
     main()
+    # config = {}
+    # with open("../httpd.conf", "r") as fs:
+    #     for line in fs.readlines():
+    #         k, v = line.split()
+    #         config[k] = v
+
