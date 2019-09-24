@@ -1,11 +1,12 @@
 import os
 from urllib.parse import unquote
 
+from config import CONFIG
 from http_engine import status
 from http_engine.methods import GET, HEAD
 from http_engine.response import parse_http_response
 
-ROOT_DIR = '/var/www/html'
+ROOT_DIR = CONFIG.get('document_root', '/var/www/html')
 
 
 def static_handler(request):

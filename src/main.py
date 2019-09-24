@@ -25,15 +25,9 @@ def engine(recv_data: bytes) -> bytes:
 
 def main():
     # BrokenPipeError: [Errno 32] Broken pipe
-    # ab -k -c 100 -n 10000 127.0.0.1:9090/httptest/wikipedia_russia.html
+    # ab -k -c 100 -n 10000 127.0.0.1:80/httptest/wikipedia_russia.html
     run(HOST, PORT, engine)
 
 
 if __name__ == '__main__':
     main()
-    # config = {}
-    # with open("../httpd.conf", "r") as fs:
-    #     for line in fs.readlines():
-    #         k, v = line.split()
-    #         config[k] = v
-
