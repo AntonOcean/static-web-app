@@ -1,21 +1,45 @@
+import asyncio
 import logging
 import socket
 
 
-def run(host: str, port: int, core_engine):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind((host, port))
-        s.listen()  # максимальное кол-во коннектов в очереди
+async def get_data(client):
+    loop = asyncio.get_event_loop()
+    data = b''
+    while True:
+        chunk = await loop.sock_recv(client, 1024)
+        data += chunk
+        if len(chunk) < 1024:
+            break
+    return data
 
-        logging.info(f"ready http://{host}:{port}")
-        while True:
-            conn, addr = s.accept()
-            with conn:
-                data = conn.recv(1024)
-                if not data:
-                    break
 
-                ans = core_engine(data)
+def get_socket(host, port):
+    server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_sock.bind((host, port))
+    server_sock.listen()
+    server_sock.setblocking(False)
+    return server_sock
 
-                conn.sendall(ans)
+
+async def handle_client(client, core_engine):
+    data = await get_data(client)
+
+    ans = await core_engine(data)
+
+    loop = asyncio.get_event_loop()
+    await loop.sock_sendall(client, ans)
+
+    client.close()
+
+
+async def run(host, port, engine):
+    server_sock = get_socket(host, port)
+    logging.info('Start on {}'.format(server_sock.getsockname()))
+    loop = asyncio.get_event_loop()
+
+    while True:
+        client, _ = await loop.sock_accept(server_sock)
+        client.settimeout(5)
+        loop.create_task(handle_client(client, engine))
