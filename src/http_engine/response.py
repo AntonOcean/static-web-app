@@ -1,36 +1,43 @@
 import mimetypes
+import os
 from datetime import datetime
+from http_engine import status as http_status
 
 DATETIME_TEMPLATE = '%a, %d %b %Y %H:%M:%S GMT'
+CHUNK_SIZE_FILE = 262144
 
 
-def parse_http_response(request, status=200, content: bytes = None) -> bytes:
+def read_in_chunks(path, chunk_size=CHUNK_SIZE_FILE):
+    with open(path, "rb") as fs:
+        while True:
+            data = fs.read(chunk_size)
+            if not data:
+                break
+            yield data
+
+
+def parse_http_response(request, status=http_status.StatusOk, path_to_content=None) -> bytes:
     protocol = request.get("protocol")
-    status_description = {
-        200: "OK",
-        400: "Bad Request",
-        403: "Forbidden",
-        404: "Not Found",
-        405: "Method Not Allowed"
-    }
-    http_protocol_lines = [f'{protocol} {status} {status_description.get(status)}']
+    http_protocol_lines = [f'{protocol} {status} {http_status.STATUS_DESCRIPTION.get(status)}']
     header = {
         "Date": datetime.now().strftime(DATETIME_TEMPLATE),
         "Server": "Linux",
         "Connection": "close",
     }
-    if status == 200:
+    if status == http_status.StatusOk:
         content_type, _ = mimetypes.guess_type(request["path"])
         header.update({
-            "Content-Length": str(len(content)) if content else '0',
+            "Content-Length": str(os.path.getsize(path_to_content)) if path_to_content else '0',
             "Content-Type": content_type or 'text/plain'
         })
     http_protocol_lines.extend([": ".join([k, v]) for k, v in header.items()])
     http_protocol_lines.append("\r\n")
 
-    content_data = content or b"\r\n\r\n"
+    null_body = path_to_content or request["method"] == "HEAD"
+    content_data = b"" if null_body else b"\r\n\r\n"
 
-    if request["method"] == "HEAD":
-        content_data = b""
+    yield "\r\n".join(http_protocol_lines).encode() + content_data
 
-    return "\r\n".join(http_protocol_lines).encode() + content_data
+    if request["method"] != "HEAD" and path_to_content:
+        for chunk in read_in_chunks(path_to_content):
+            yield chunk
