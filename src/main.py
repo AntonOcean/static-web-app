@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 HOST = '0.0.0.0'
 PORT = 80
-CPU_COUNT = int(CONFIG.get('cpu_limit', multiprocessing.cpu_count())) - 1
+CPU_COUNT = int(CONFIG.get('cpu_limit', multiprocessing.cpu_count()))
 
 
 async def engine(recv_data: bytes) -> bytes:
